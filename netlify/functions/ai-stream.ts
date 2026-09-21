@@ -34,12 +34,12 @@ export const handler: Handler = async (event: HandlerEvent, _context: HandlerCon
     return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
-  const apiKey = process.env.GROQ_API_KEY;
+  const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     return {
       statusCode: 503,
       headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'AI service is not configured. Please add GROQ_API_KEY.' }),
+      body: JSON.stringify({ error: 'AI service is not configured. Please add OPENROUTER_API_KEY.' }),
     };
   }
 
@@ -56,14 +56,16 @@ export const handler: Handler = async (event: HandlerEvent, _context: HandlerCon
   }
 
   try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': 'https://mindfulheaven.com',
+        'X-Title': 'Mindful Heaven'
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           ...messages,
@@ -79,7 +81,7 @@ export const handler: Handler = async (event: HandlerEvent, _context: HandlerCon
       return {
         statusCode: response.status,
         headers: { ...headers, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: (errorData as any).error?.message || 'Groq API error' }),
+        body: JSON.stringify({ error: (errorData as any).error?.message || 'OpenRouter API error' }),
       };
     }
 
@@ -105,11 +107,11 @@ export const handler: Handler = async (event: HandlerEvent, _context: HandlerCon
       body: sseOutput,
     };
   } catch (error: any) {
-    console.error('Groq fetch error:', error);
+    console.error('OpenRouter fetch error:', error);
     return {
       statusCode: 500,
       headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'Failed to connect to Groq service' }),
+      body: JSON.stringify({ error: 'Failed to connect to OpenRouter service' }),
     };
   }
 };
