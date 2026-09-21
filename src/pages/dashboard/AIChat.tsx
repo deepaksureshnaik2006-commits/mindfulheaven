@@ -136,16 +136,18 @@ export default function AIChat() {
       let response: Response;
       
       // Local development fallback
-      if (import.meta.env.DEV && import.meta.env.VITE_GROQ_API_KEY) {
+      if (import.meta.env.DEV && import.meta.env.VITE_OPENROUTER_API_KEY) {
         try {
-          response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
+              'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
+              'HTTP-Referer': 'http://localhost:5000',
+              'X-Title': 'Mindful Heaven'
             },
             body: JSON.stringify({
-              model: 'llama-3.3-70b-versatile',
+              model: 'openai/gpt-oss-120b',
               messages: [
                 { role: 'system', content: "You are a compassionate AI assistant." },
                 ...chatMessages
@@ -154,7 +156,7 @@ export default function AIChat() {
             }),
           });
         } catch (err) {
-          console.warn('Local Groq direct call failed, trying /api/ai-stream proxy...', err);
+          console.warn('Local OpenRouter direct call failed, trying /api/ai-stream proxy...', err);
           response = await fetch('/api/ai-stream', {
             method: 'POST',
             credentials: 'include',
@@ -173,7 +175,9 @@ export default function AIChat() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error((errorData as any).error || 'Failed to get AI response');
+        const errObj = errorData?.error;
+        const errMsg = typeof errObj === 'string' ? errObj : (errObj?.message || JSON.stringify(errObj) || 'Failed to get AI response');
+        throw new Error(errMsg);
       }
 
       const reader = response.body?.getReader();
